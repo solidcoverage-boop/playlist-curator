@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playlist Curator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface2: #1f1f1f;
+  --border: #2a2a2a;
+  --border2: #333;
+  --green: #1ed760;
+  --green-glow: rgba(30,215,96,0.15);
+  --green-dim: #13a045;
+  --text: #f0f0f0;
+  --text-mid: #aaa;
+  --text-dim: #666;
+  --red: #ff4d4d;
+  --amber: #ffa940;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1,h2,h3 { font-family: 'Syne', sans-serif; }
+
+/* ── SCROLLBAR ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── HEADER ────────────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  background: rgba(13,13,13,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: 17px; font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.logo-dot {
+  width: 9px; height: 9px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--green);
+}
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 50px;
+  font-size: 13px; color: var(--text-mid);
+}
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px;
+  border-radius: 50px;
+  border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.btn-green {
+  background: var(--green); color: #000; font-weight: 700;
+}
+.btn-green:hover { background: #22e868; box-shadow: 0 0 20px var(--green-glow); }
+.btn-green:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-mid);
+  border: 1px solid var(--border2);
+}
+.btn-outline:hover { border-color: var(--text-mid); color: var(--text); }
+
+.btn-ghost {
+  background: transparent; color: var(--text-mid);
+  border: none; padding: 8px 12px; font-size: 13px;
+}
+.btn-ghost:hover { color: var(--text); }
+
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+
+/* ── FORMS ─────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 7px; }
+
+.field-label {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+input[type=text], input[type=password], textarea, select {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 14px; font-family: 'DM Sans', sans-serif;
+  width: 100%;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-glow);
+}
+
+textarea { resize: vertical; min-height: 88px; line-height: 1.6; }
+
+select { cursor: pointer; }
+
+/* ── LAYOUT ────────────────────────────────────────────── */
+.container { max-width: 800px; margin: 0 auto; padding: 36px 24px; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── CARD ──────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+/* ── CENTERED SCREEN (login/setup) ─────────────────────── */
+.screen-center {
+  min-height: calc(100vh - 61px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; gap: 20px; padding: 40px 24px;
+}
+
+.screen-icon {
+  width: 72px; height: 72px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+}
+
+.screen-center h1 { font-size: 26px; letter-spacing: -0.03em; }
+
+.screen-center p {
+  color: var(--text-mid); max-width: 340px; line-height: 1.7; font-size: 14px;
+}
+
+/* ── LOADING ───────────────────────────────────────────── */
+.loading-state {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 18px;
+  padding: 60px 20px; color: var(--text-dim);
+}
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TABS ──────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 2px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 3px; margin-bottom: 24px;
+}
+
+.tab {
+  flex: 1; text-align: center;
+  padding: 8px 12px;
+  font-size: 13px; font-weight: 500; font-family: 'Syne', sans-serif;
+  color: var(--text-dim); cursor: pointer;
+  border-radius: 8px; transition: all 0.15s;
+  user-select: none;
+}
+.tab.active { background: var(--surface2); color: var(--text); }
+
+/* ── TRACK ITEM ────────────────────────────────────────── */
+.track-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+.track-item:hover { background: var(--surface2); }
+
+.track-num { width: 22px; text-align: right; color: var(--text-dim); font-size: 12px; flex-shrink: 0; }
+
+.track-thumb {
+  width: 38px; height: 38px;
+  border-radius: 4px; background: var(--surface2);
+  object-fit: cover; flex-shrink: 0;
+}
+
+.track-info { flex: 1; min-width: 0; }
+
+.track-name {
+  font-size: 13px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.track-artist {
+  font-size: 12px; color: var(--text-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── CANDIDATE CARD ────────────────────────────────────── */
+.cand-card {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 0.2s, opacity 0.2s;
+}
+
+.cand-card.approved { border-color: rgba(30,215,96,0.5); background: rgba(30,215,96,0.04); }
+.cand-card.rejected { opacity: 0.35; border-color: rgba(255,77,77,0.3); }
+
+.cand-thumb {
+  width: 52px; height: 52px;
+  border-radius: 6px; background: var(--surface2);
+  object-fit: cover; flex-shrink: 0;
+}
+
+.cand-thumb-placeholder {
+  width: 52px; height: 52px;
+  border-radius: 6px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); font-size: 18px; flex-shrink: 0;
+}
+
+.cand-body { flex: 1; min-width: 0; }
+
+.cand-title { font-size: 14px; font-weight: 600; font-family: 'Syne', sans-serif; margin-bottom: 2px; }
+
+.cand-artist { font-size: 12px; color: var(--text-mid); margin-bottom: 8px; }
+
+.cand-reason {
+  font-size: 12.5px; color: var(--text-dim);
+  font-style: italic; line-height: 1.55;
+}
+
+.cand-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+.btn-approve {
+  padding: 6px 14px; border-radius: 50px; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  border: 1px solid rgba(30,215,96,0.5); color: var(--green);
+  background: transparent; transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-approve:hover, .btn-approve.active { background: var(--green); color: #000; border-color: var(--green); }
+
+.btn-skip {
+  padding: 6px 14px; border-radius: 50px; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--border2); color: var(--text-dim);
+  background: transparent; transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-skip:hover, .btn-skip.active { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* ── BADGES ────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 50px;
+  font-size: 11px; font-weight: 600; font-family: 'Syne', sans-serif;
+}
+.badge-green { background: rgba(30,215,96,0.12); color: var(--green); border: 1px solid rgba(30,215,96,0.25); }
+.badge-red { background: rgba(255,77,77,0.1); color: var(--red); border: 1px solid rgba(255,77,77,0.2); }
+.badge-amber { background: rgba(255,169,64,0.1); color: var(--amber); border: 1px solid rgba(255,169,64,0.25); }
+.badge-dim { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* ── ALERTS ────────────────────────────────────────────── */
+.alert {
+  padding: 11px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 1.5;
+}
+.alert-error { background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.25); color: #ff8080; }
+.alert-success { background: rgba(30,215,96,0.08); border: 1px solid rgba(30,215,96,0.25); color: var(--green); }
+.alert-info { background: rgba(150,150,255,0.08); border: 1px solid rgba(150,150,255,0.2); color: #a0a0f0; }
+
+/* ── SECTION HEADER ────────────────────────────────────── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+.section-meta { font-size: 12px; color: var(--text-dim); }
+
+/* ── SETTINGS DRAWER ───────────────────────────────────── */
+.drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 199;
+  display: none;
+  backdrop-filter: blur(4px);
+}
+.drawer-overlay.open { display: block; }
+
+.drawer {
+  position: fixed; top: 0; right: -400px;
+  width: 360px; height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 28px 24px;
+  z-index: 200; overflow-y: auto;
+  transition: right 0.25s cubic-bezier(.4,0,.2,1);
+}
+.drawer.open { right: 0; }
+
+/* ── SCROLLABLE LIST ───────────────────────────────────── */
+.list-scroll {
+  max-height: 340px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 6px;
+}
+
+/* ── DIVIDER ───────────────────────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 22px 0; }
+
+/* ── PROGRESS DOTS ─────────────────────────────────────── */
+.progress-dots { display: flex; gap: 4px; align-items: center; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
+.dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* ── STAGING TRACK ─────────────────────────────────────── */
+.staging-card {
+  display: flex; gap: 14px; align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  transition: border-color 0.2s, opacity 0.2s;
+}
+.staging-card.approved-to-main { border-color: rgba(30,215,96,0.4); background: rgba(30,215,96,0.03); }
+.staging-card.removed { opacity: 0.3; }
+
+.staging-body { flex: 1; min-width: 0; }
+
+/* ── LINK ──────────────────────────────────────────────── */
+a { color: var(--green); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── GRID GAP HELPERS ──────────────────────────────────── */
+.stack-sm { display: flex; flex-direction: column; gap: 8px; }
+.stack-md { display: flex; flex-direction: column; gap: 16px; }
+.stack-lg { display: flex; flex-direction: column; gap: 24px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- HEADER                                                  -->
+<!-- ══════════════════════════════════════════════════════ -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Playlist Curator
+  </div>
+  <div class="header-right">
+    <div class="user-chip" id="user-chip" style="display:none">
+      <span id="user-name"></span>
+    </div>
+    <button class="btn btn-ghost" id="settings-btn" style="display:none" onclick="openDrawer()">Settings</button>
+    <button class="btn btn-outline btn-sm" id="logout-btn" style="display:none" onclick="logout()">Log out</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- SETTINGS DRAWER                                         -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h2 style="font-size:16px;letter-spacing:-0.02em">Settings</h2>
+    <button onclick="closeDrawer()" class="btn btn-ghost" style="padding:4px 8px;font-size:18px">×</button>
+  </div>
+  <div class="field">
+    <div class="field-label">Anthropic API Key</div>
+    <input type="password" id="drawer-api-key" placeholder="sk-ant-..." />
+    <span style="font-size:11.5px;color:var(--text-dim);line-height:1.5">Stored only in your browser's local storage. Used exclusively to call the Anthropic API for song recommendations.</span>
+  </div>
+  <div class="divider"></div>
+  <button class="btn btn-green" style="width:100%" onclick="saveDrawerSettings()">Save</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- VIEW: LOADING                                           -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="view active" id="view-loading">
+  <div class="loading-state" style="min-height:calc(100vh - 61px);justify-content:center">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- VIEW: SETUP (enter API key first)                       -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="view" id="view-setup">
+  <div class="screen-center">
+    <div class="screen-icon">🔑</div>
+    <h1>One-Time Setup</h1>
+    <p>Enter your Anthropic API key to power song curation. It stays in your browser and is never shared.</p>
+    <div style="width:100%;max-width:360px" class="stack-sm">
+      <input type="password" id="setup-key" placeholder="sk-ant-..." />
+      <button class="btn btn-green" style="width:100%;padding:13px" onclick="saveSetupKey()">Continue →</button>
+    </div>
+    <span style="font-size:12px;color:var(--text-dim)">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- VIEW: LOGIN                                             -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="view" id="view-login">
+  <div class="screen-center">
+    <div class="screen-icon">🎵</div>
+    <h1>Playlist Curator</h1>
+    <p>Connect your Spotify account to start finding exceptional additions to your playlists.</p>
+    <button class="btn btn-green" style="padding:14px 36px;font-size:15px" onclick="spotifyLogin()">
+      Connect Spotify
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- VIEW: MAIN (input form)                                 -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="view" id="view-main">
+  <div class="container">
+    <div style="margin-bottom:32px">
+      <h1 style="font-size:24px;letter-spacing:-0.03em;margin-bottom:6px">Find Songs to Add</h1>
+      <p style="color:var(--text-mid)">Load a playlist, describe its character, and Claude will find exceptional additions.</p>
+    </div>
+
+    <div class="card stack-md">
+      <div class="field">
+        <div class="field-label">Spotify Playlist URL or ID</div>
+        <input type="text" id="playlist-url" placeholder="https://open.spotify.com/playlist/…" />
+      </div>
+      <div class="field">
+        <div class="field-label">Vibe & Context</div>
+        <textarea id="vibe" placeholder="Describe the mood, feel, and intent of this playlist. What makes a song a perfect fit — era, energy, instrumentation, lyrical themes?"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label">Hard Rules <span style="color:var(--text-dim);font-size:11px;text-transform:none;letter-spacing:0">(optional)</span></div>
+        <textarea id="rules" style="min-height:60px" placeholder="e.g. 'No songs after 2010', 'Acoustic only', 'Must be under 4 minutes'"></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="field" style="flex:0 0 auto">
+          <div class="field-label">Candidates to Generate</div>
+          <select id="cand-count" style="width:auto">
+            <option value="10">10 songs</option>
+            <option value="15" selected>15 songs</option>
+            <option value="20">20 songs</option>
+            <option value="25">25 songs</option>
+          </select>
+        </div>
+        <button class="btn btn-green" id="analyze-btn" style="margin-top:18px;padding:12px 28px" onclick="runAnalysis()">
+          Load &amp; Generate Candidates →
+        </button>
+      </div>
+    </div>
+
+    <div id="main-err" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- VIEW: RESULTS                                           -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="view" id="view-results">
+  <div class="container">
+
+    <!-- Breadcrumb -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button class="btn btn-outline btn-sm" onclick="showView('main')">← Back</button>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px" id="res-plist-name"></div>
+        <div style="font-size:12px;color:var(--text-dim)" id="res-plist-meta"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-candidates" onclick="switchTab('candidates')">Candidates</div>
+      <div class="tab" id="tab-source" onclick="switchTab('source')">Source Tracks</div>
+    </div>
+
+    <!-- CANDIDATES PANEL -->
+    <div id="panel-candidates">
+      <div class="loading-state" id="cand-loading">
+        <div class="spinner"></div>
+        <span id="cand-loading-msg" style="color:var(--text-dim);font-size:13px">Analyzing playlist…</span>
+      </div>
+
+      <div id="cand-content" style="display:none">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Claude's Picks</div>
+            <div class="section-meta" id="cand-meta"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-outline btn-sm" onclick="approveAll()">Approve All</button>
+            <button class="btn btn-green btn-sm" id="stage-btn" disabled onclick="buildStagingPlaylist()">
+              Create Staging Playlist
+            </button>
+          </div>
+        </div>
+
+        <div class="stack-md" id="cand-list"></div>
+        <div id="cand-err" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- SOURCE PANEL -->
+    <div id="panel-source" style="display:none">
+      <div class="section-header">
+        <div class="section-title">Source Tracks</div>
+        <div class="section-meta" id="src-meta"></div>
+      </div>
+      <div class="list-scroll" id="src-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- VIEW: STAGING                                           -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="view" id="view-staging">
+  <div class="container">
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button class="btn btn-outline btn-sm" onclick="showView('results')">← Back to Candidates</button>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">Staging Playlist Ready</div>
+        <div style="font-size:12px;color:var(--text-dim)">Listen on Spotify, then add keepers to your main playlist</div>
+      </div>
+    </div>
+
+    <div id="staging-alert" style="margin-bottom:18px"></div>
+
+    <div class="section-header">
+      <div class="section-title">Staged Tracks</div>
+      <div class="section-meta" id="staging-meta"></div>
+    </div>
+
+    <div class="stack-sm" id="staging-list"></div>
+    <div id="staging-err" style="margin-top:14px"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- SCRIPT                                                   -->
+<!-- ══════════════════════════════════════════════════════ -->
+<script>
+// ── CONFIG ─────────────────────────────────────────────────
+const CLIENT_ID   = '6579c5825aa142aa88cedd30e82f9d27';
+const REDIRECT    = 'https://solidcoverage-boop.github.io/playlist-curator';
+const SCOPES      = 'playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email';
+
+// ── STATE ───────────────────────────────────────────────────
+let currentUser     = null;
+let sourceTracks    = [];
+let candidates      = [];   // {title, artist, reasoning, spotifyTrack|null, status:'pending'|'approved'|'rejected'}
+let stagedTracks    = [];   // {candidate, spotifyTrack, uri, status:'staged'|'added'|'removed'}
+let sourcePlaylistId  = null;
+let sourcePlaylistName = '';
+let stagingPlaylistId = null;
+
+// ── PKCE ────────────────────────────────────────────────────
+function randStr(n) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const arr = new Uint8Array(n);
+  crypto.getRandomValues(arr);
+  return [...arr].map(x => chars[x % chars.length]).join('');
+}
+async function sha256(s) {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+}
+function b64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+// ── SPOTIFY AUTH ────────────────────────────────────────────
+async function spotifyLogin() {
+  const v = randStr(64);
+  localStorage.setItem('pkce_v', v);
+  const challenge = b64url(await sha256(v));
+  const p = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: REDIRECT,
+    code_challenge_method: 'S256',
+    code_challenge: challenge,
+    scope: SCOPES,
+  });
+  location.href = 'https://accounts.spotify.com/authorize?' + p;
+}
+
+async function exchangeCode(code) {
+  const v = localStorage.getItem('pkce_v');
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code, redirect_uri: REDIRECT,
+      client_id: CLIENT_ID, code_verifier: v,
+    })
+  });
+  if (!r.ok) throw new Error('Token exchange failed');
+  const d = await r.json();
+  localStorage.setItem('sp_token', d.access_token);
+  localStorage.setItem('sp_expiry', Date.now() + d.expires_in * 1000);
+  if (d.refresh_token) localStorage.setItem('sp_refresh', d.refresh_token);
+  localStorage.removeItem('pkce_v');
+  return d.access_token;
+}
+
+async function tryRefresh() {
+  const rt = localStorage.getItem('sp_refresh');
+  if (!rt) return null;
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: rt, client_id: CLIENT_ID,
+    })
+  });
+  if (!r.ok) return null;
+  const d = await r.json();
+  localStorage.setItem('sp_token', d.access_token);
+  localStorage.setItem('sp_expiry', Date.now() + d.expires_in * 1000);
+  return d.access_token;
+}
+
+function tokenValid() {
+  const exp = localStorage.getItem('sp_expiry');
+  return exp && Date.now() < +exp - 60000;
+}
+
+async function getToken() {
+  if (tokenValid()) return localStorage.getItem('sp_token');
+  return tryRefresh();
+}
+
+function logout() {
+  ['sp_token','sp_expiry','sp_refresh'].forEach(k => localStorage.removeItem(k));
+  currentUser = null;
+  document.getElementById('user-chip').style.display = 'none';
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('settings-btn').style.display = 'none';
+  showView('login');
+}
+
+// ── SPOTIFY API ─────────────────────────────────────────────
+async function spFetch(path, opts = {}) {
+  const tok = await getToken();
+  if (!tok) { logout(); throw new Error('Session expired — please log in again.'); }
+  const r = await fetch('https://api.spotify.com/v1' + path, {
+    ...opts,
+    headers: {
+      'Authorization': 'Bearer ' + tok,
+      'Content-Type': 'application/json',
+      ...(opts.headers || {}),
+    }
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error?.message || 'Spotify error ' + r.status);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+function parsePlaylistId(raw) {
+  raw = raw.trim();
+  let m = raw.match(/playlist\/([A-Za-z0-9]+)/);
+  if (m) return m[1];
+  m = raw.match(/spotify:playlist:([A-Za-z0-9]+)/);
+  if (m) return m[1];
+  if (/^[A-Za-z0-9]{22}$/.test(raw)) return raw;
+  return null;
+}
+
+async function getPlaylistInfo(id) {
+  return spFetch(`/playlists/${id}?fields=id,name,tracks(total)`);
+}
+
+async function getAllTracks(id) {
+  let tracks = [], url = `/playlists/${id}/tracks?limit=50&fields=next,items(track(id,name,artists,album(images)))`;
+  while (url) {
+    const d = await spFetch(url);
+    tracks.push(...(d.items||[]).filter(i => i.track?.id).map(i => i.track));
+    url = d.next ? d.next.replace('https://api.spotify.com/v1','') : null;
+  }
+  return tracks;
+}
+
+async function searchTrack(title, artist) {
+  const q = encodeURIComponent(`track:${title} artist:${artist}`);
+  const d = await spFetch(`/search?q=${q}&type=track&limit=3`);
+  return d.tracks?.items?.[0] || null;
+}
+
+async function createPlaylist(name, desc) {
+  return spFetch(`/users/${currentUser.id}/playlists`, {
+    method: 'POST',
+    body: JSON.stringify({ name, description: desc, public: false })
+  });
+}
+
+async function addTracks(playlistId, uris) {
+  for (let i = 0; i < uris.length; i += 100)
+    await spFetch(`/playlists/${playlistId}/tracks`, {
+      method: 'POST',
+      body: JSON.stringify({ uris: uris.slice(i, i+100) })
+    });
+}
+
+async function removeTrack(playlistId, uri) {
+  await spFetch(`/playlists/${playlistId}/tracks`, {
+    method: 'DELETE',
+    body: JSON.stringify({ tracks: [{ uri }] })
+  });
+}
+
+// ── CLAUDE API ──────────────────────────────────────────────
+async function getCandidates(tracks, vibe, rules, count) {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) throw new Error('No API key — open Settings to add your Anthropic key.');
+
+  const trackList = tracks.slice(0, 100).map((t, i) =>
+    `${i+1}. "${t.name}" — ${t.artists.map(a=>a.name).join(', ')}`
+  ).join('\n');
+
+  const prompt = `You are an expert music curator expanding a Spotify playlist.
+
+CURRENT TRACKS (${tracks.length} total, showing up to 100):
+${trackList}
+
+PLAYLIST VIBE:
+${vibe || '(Infer from the track list.)'}
+
+${rules ? `RULES:\n${rules}\n` : ''}
+
+Suggest exactly ${count} songs that would be exceptional additions. Prioritize quality and musical fit. Think deeply about genre, era, production style, energy, and mood.
+
+Respond ONLY with a raw JSON array — no preamble, no markdown, no code fences. Format:
+[{"title":"Song Title","artist":"Artist Name","reasoning":"1-2 sentences on why this belongs here."}]`;
+
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-client-side-api-key-header': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error?.message || 'Anthropic API error ' + r.status);
+  }
+  const d = await r.json();
+  const text = d.content?.[0]?.text || '';
+  try {
+    return JSON.parse(text);
+  } catch {
+    const m = text.match(/\[[\s\S]*\]/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('Could not parse Claude response.');
+  }
+}
+
+// ── VIEW MANAGEMENT ─────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = msg ? `<div class="alert alert-error">${esc(msg)}</div>` : '';
+}
+
+function showSuccess(id, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html ? `<div class="alert alert-success">${html}</div>` : '';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function switchTab(tab) {
+  ['candidates','source'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('panel-' + (t === 'source' ? 'source' : 'candidates')).style.display =
+      t === tab ? 'block' : 'none';
+  });
+}
+
+function openDrawer() {
+  document.getElementById('drawer-api-key').value = localStorage.getItem('anthropic_key') || '';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+function saveDrawerSettings() {
+  const k = document.getElementById('drawer-api-key').value.trim();
+  if (k) localStorage.setItem('anthropic_key', k);
+  closeDrawer();
+}
+
+// ── RENDER HELPERS ──────────────────────────────────────────
+function thumbImg(track, cls) {
+  const imgs = track?.album?.images || [];
+  const src = imgs[imgs.length - 1]?.url;
+  return src
+    ? `<img class="${cls}" src="${esc(src)}" alt="">`
+    : `<div class="${cls}" style="display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-dim)">♪</div>`;
+}
+
+function renderSourceTracks(tracks) {
+  document.getElementById('src-meta').textContent = tracks.length + ' tracks';
+  document.getElementById('src-list').innerHTML = tracks.map((t, i) => `
+    <div class="track-item">
+      <span class="track-num">${i+1}</span>
+      ${thumbImg(t, 'track-thumb')}
+      <div class="track-info">
+        <div class="track-name">${esc(t.name)}</div>
+        <div class="track-artist">${esc(t.artists.map(a=>a.name).join(', '))}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateStageBtn() {
+  const n = candidates.filter(c => c.status === 'approved').length;
+  const btn = document.getElementById('stage-btn');
+  btn.disabled = n === 0;
+  btn.textContent = n > 0 ? `Create Staging Playlist (${n})` : 'Create Staging Playlist';
+}
+
+function renderCandidates() {
+  document.getElementById('cand-meta').textContent = candidates.length + ' suggestions';
+  document.getElementById('cand-list').innerHTML = candidates.map((c, i) => `
+    <div class="cand-card ${c.status}" id="cc-${i}">
+      ${c.spotifyTrack
+        ? thumbImg(c.spotifyTrack, 'cand-thumb')
+        : `<div class="cand-thumb-placeholder">♪</div>`}
+      <div class="cand-body">
+        <div class="cand-title">${esc(c.title)}</div>
+        <div class="cand-artist">
+          ${esc(c.artist)}
+          ${!c.spotifyTrack ? ' <span class="badge badge-amber">Not on Spotify</span>' : ''}
+        </div>
+        <div class="cand-reason">${esc(c.reasoning)}</div>
+      </div>
+      <div class="cand-actions">
+        ${c.spotifyTrack ? `
+          <button class="btn-approve ${c.status==='approved'?'active':''}" onclick="toggleApprove(${i})">
+            ${c.status==='approved' ? '✓ Approved' : 'Approve'}
+          </button>
+          <button class="btn-skip ${c.status==='rejected'?'active':''}" onclick="toggleReject(${i})">
+            ${c.status==='rejected' ? '✗ Skipped' : 'Skip'}
+          </button>
+        ` : `<span class="badge badge-dim">Unavailable</span>`}
+      </div>
+    </div>
+  `).join('');
+  updateStageBtn();
+}
+
+function toggleApprove(i) {
+  candidates[i].status = candidates[i].status === 'approved' ? 'pending' : 'approved';
+  renderCandidates();
+}
+function toggleReject(i) {
+  candidates[i].status = candidates[i].status === 'rejected' ? 'pending' : 'rejected';
+  renderCandidates();
+}
+function approveAll() {
+  candidates.forEach(c => { if (c.spotifyTrack) c.status = 'approved'; });
+  renderCandidates();
+}
+
+function renderStaging() {
+  document.getElementById('staging-meta').textContent = stagedTracks.length + ' tracks';
+  document.getElementById('staging-list').innerHTML = stagedTracks.map((st, i) => {
+    const t = st.spotifyTrack;
+    const imgs = t.album?.images || [];
+    const src = imgs[imgs.length-1]?.url;
+    return `
+      <div class="staging-card ${st.status === 'added' ? 'approved-to-main' : st.status === 'removed' ? 'removed' : ''}" id="sc-${i}">
+        ${src ? `<img class="track-thumb" style="width:46px;height:46px;border-radius:6px" src="${esc(src)}" alt="">` : ''}
+        <div class="staging-body">
+          <div class="track-name" style="font-size:14px">${esc(t.name)}</div>
+          <div class="track-artist">${esc(t.artists.map(a=>a.name).join(', '))}</div>
+          <div class="cand-reason" style="margin-top:4px">${esc(st.candidate.reasoning)}</div>
+        </div>
+        <div style="flex-shrink:0">
+          ${st.status === 'added'
+            ? `<span class="badge badge-green">✓ Added</span>`
+            : st.status === 'removed'
+            ? `<span class="badge badge-dim">Removed</span>`
+            : `
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <button class="btn-approve" onclick="addToMain(${i})">Add to Main</button>
+                <button class="btn-skip" onclick="removeStaged(${i})">Remove</button>
+              </div>
+            `}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── MAIN WORKFLOW ───────────────────────────────────────────
+async function runAnalysis() {
+  const urlRaw = document.getElementById('playlist-url').value;
+  const vibe   = document.getElementById('vibe').value.trim();
+  const rules  = document.getElementById('rules').value.trim();
+  const count  = parseInt(document.getElementById('cand-count').value);
+
+  showErr('main-err', '');
+
+  const pid = parsePlaylistId(urlRaw);
+  if (!pid) { showErr('main-err', 'Enter a valid Spotify playlist URL or ID.'); return; }
+  if (!localStorage.getItem('anthropic_key')) {
+    showErr('main-err', 'Anthropic API key not set — click Settings to add it.'); return;
+  }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+
+  try {
+    showView('results');
+    document.getElementById('cand-loading').style.display = 'flex';
+    document.getElementById('cand-content').style.display = 'none';
+    setMsg('Loading playlist…');
+
+    // Load playlist
+    const info = await getPlaylistInfo(pid);
+    sourcePlaylistId   = pid;
+    sourcePlaylistName = info.name;
+    document.getElementById('res-plist-name').textContent = info.name;
+    document.getElementById('res-plist-meta').textContent = info.tracks.total + ' tracks';
+
+    const tracks = await getAllTracks(pid);
+    sourceTracks = tracks;
+    renderSourceTracks(tracks);
+
+    // Ask Claude
+    setMsg(`Asking Claude to analyze ${tracks.length} tracks and pick ${count} candidates…`);
+    const raw = await getCandidates(tracks, vibe, rules, count);
+
+    // Search Spotify for each
+    candidates = [];
+    for (let i = 0; i < raw.length; i++) {
+      const c = raw[i];
+      setMsg(`Finding "${c.title}" on Spotify… (${i+1}/${raw.length})`);
+      let spTrack = null;
+      try { spTrack = await searchTrack(c.title, c.artist); } catch {}
+      candidates.push({ ...c, spotifyTrack: spTrack, status: 'pending' });
+    }
+
+    document.getElementById('cand-loading').style.display = 'none';
+    document.getElementById('cand-content').style.display = 'block';
+    renderCandidates();
+
+  } catch (err) {
+    showView('main');
+    showErr('main-err', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Load & Generate Candidates →';
+  }
+}
+
+function setMsg(msg) {
+  document.getElementById('cand-loading-msg').textContent = msg;
+}
+
+async function buildStagingPlaylist() {
+  const approved = candidates.filter(c => c.status === 'approved' && c.spotifyTrack);
+  if (!approved.length) return;
+
+  const btn = document.getElementById('stage-btn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  showErr('cand-err', '');
+
+  try {
+    const date = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    const pl = await createPlaylist(
+      `${sourcePlaylistName} — Candidates ${date}`,
+      `Candidate additions for "${sourcePlaylistName}", generated by Playlist Curator`
+    );
+    stagingPlaylistId = pl.id;
+
+    const uris = approved.map(c => c.spotifyTrack.uri);
+    await addTracks(stagingPlaylistId, uris);
+
+    stagedTracks = approved.map(c => ({
+      candidate: c,
+      spotifyTrack: c.spotifyTrack,
+      uri: c.spotifyTrack.uri,
+      status: 'staged'
+    }));
+
+    showView('staging');
+    const link = `https://open.spotify.com/playlist/${pl.id}`;
+    showSuccess('staging-alert',
+      `Staging playlist created! <a href="${link}" target="_blank" style="color:var(--green);font-weight:600">Open in Spotify →</a> &nbsp;Listen, then click "Add to Main" for keepers.`);
+    renderStaging();
+
+  } catch (err) {
+    showErr('cand-err', err.message);
+  } finally {
+    btn.disabled = false; updateStageBtn();
+  }
+}
+
+async function addToMain(i) {
+  const st = stagedTracks[i];
+  try {
+    await addTracks(sourcePlaylistId, [st.uri]);
+    stagedTracks[i].status = 'added';
+    renderStaging();
+  } catch (err) {
+    showErr('staging-err', 'Failed to add track: ' + err.message);
+  }
+}
+
+async function removeStaged(i) {
+  const st = stagedTracks[i];
+  try {
+    await removeTrack(stagingPlaylistId, st.uri);
+    stagedTracks[i].status = 'removed';
+    renderStaging();
+  } catch (err) {
+    showErr('staging-err', 'Failed to remove track: ' + err.message);
+  }
+}
+
+// ── INIT ────────────────────────────────────────────────────
+function showAuthedHeader() {
+  if (currentUser) document.getElementById('user-name').textContent = currentUser.display_name || currentUser.id;
+  document.getElementById('user-chip').style.display = 'flex';
+  document.getElementById('logout-btn').style.display = 'inline-flex';
+  document.getElementById('settings-btn').style.display = 'inline-flex';
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const code   = params.get('code');
+  const err    = params.get('error');
+
+  // Clear OAuth params from URL
+  if (code || err) history.replaceState({}, '', location.pathname);
+
+  if (err) { showView('login'); return; }
+
+  if (code) {
+    try {
+      await exchangeCode(code);
+      currentUser = await spFetch('/me');
+      showAuthedHeader();
+      showView('main');
+    } catch { showView('login'); }
+    return;
+  }
+
+  const tok = await getToken();
+  if (tok) {
+    try {
+      currentUser = await spFetch('/me');
+      showAuthedHeader();
+      showView('main');
+    } catch { showView('login'); }
+    return;
+  }
+
+  if (!localStorage.getItem('anthropic_key')) {
+    showView('setup'); return;
+  }
+
+  showView('login');
+}
+
+// ── SETUP SCREEN ────────────────────────────────────────────
+function saveSetupKey() {
+  const k = document.getElementById('setup-key').value.trim();
+  if (!k.startsWith('sk-')) {
+    alert('Please enter a valid Anthropic API key starting with sk-');
+    return;
+  }
+  localStorage.setItem('anthropic_key', k);
+  showView('login');
+}
+
+init();
+</script>
+</body>
+</html>
