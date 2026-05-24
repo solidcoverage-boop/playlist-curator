@@ -988,20 +988,38 @@ async function runAnalysis() {
     document.getElementById('cand-content').style.display = 'none';
     setMsg('Loading playlist…');
 
-    // Load playlist
-    const info = await getPlaylistInfo(pid);
+    // Load playlist info
+    setMsg('Loading playlist info…');
+    let info;
+    try {
+      info = await getPlaylistInfo(pid);
+    } catch(e) {
+      throw new Error('Step 1 – Spotify playlist info: ' + e.message);
+    }
     sourcePlaylistId   = pid;
     sourcePlaylistName = info.name;
     document.getElementById('res-plist-name').textContent = info.name;
     document.getElementById('res-plist-meta').textContent = (info.tracks?.total ?? '?') + ' tracks';
 
-    const tracks = await getAllTracks(pid);
+    // Load tracks
+    setMsg('Loading playlist tracks…');
+    let tracks;
+    try {
+      tracks = await getAllTracks(pid);
+    } catch(e) {
+      throw new Error('Step 2 – Spotify track list: ' + e.message);
+    }
     sourceTracks = tracks;
     renderSourceTracks(tracks);
 
     // Ask Claude
     setMsg(`Asking Claude to analyze ${tracks.length} tracks and pick ${count} candidates…`);
-    const raw = await getCandidates(tracks, vibe, rules, count);
+    let raw;
+    try {
+      raw = await getCandidates(tracks, vibe, rules, count);
+    } catch(e) {
+      throw new Error('Step 3 – Claude API: ' + e.message);
+    }
 
     // Search Spotify for each
     candidates = [];
