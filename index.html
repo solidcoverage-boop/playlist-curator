@@ -728,7 +728,7 @@ async function getPlaylistInfo(id) {
 }
 
 async function getAllTracks(id) {
-  let tracks = [], url = `/playlists/${id}/tracks?limit=50&fields=next,items(track(id,name,artists,album(images)))`;
+  let tracks = [], url = `/playlists/${id}/tracks?limit=50`;
   while (url) {
     const d = await spFetch(url);
     tracks.push(...(d.items||[]).filter(i => i.track?.id).map(i => i.track));
