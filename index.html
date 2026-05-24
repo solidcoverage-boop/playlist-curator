@@ -724,7 +724,7 @@ function parsePlaylistId(raw) {
 }
 
 async function getPlaylistInfo(id) {
-  return spFetch(`/playlists/${id}?fields=id,name,tracks(total)`);
+  return spFetch(`/playlists/${id}`);
 }
 
 async function getAllTracks(id) {
@@ -993,7 +993,7 @@ async function runAnalysis() {
     sourcePlaylistId   = pid;
     sourcePlaylistName = info.name;
     document.getElementById('res-plist-name').textContent = info.name;
-    document.getElementById('res-plist-meta').textContent = info.tracks.total + ' tracks';
+    document.getElementById('res-plist-meta').textContent = (info.tracks?.total ?? '?') + ' tracks';
 
     const tracks = await getAllTracks(pid);
     sourceTracks = tracks;
